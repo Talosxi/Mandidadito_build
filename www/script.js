@@ -1,6 +1,6 @@
 // ============================================
 //   MANDADITO - Lógica principal v2.4.3
-//   Fix: Botón eliminar activo y reordenamiento
+//   Fix: Botón eliminar activo y arrastre libre
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -180,9 +180,8 @@ function renderizarListaCompra() {
         
         const btnDeleteBg = document.createElement('div'); 
         btnDeleteBg.className = 'swipe-bg-delete';
-        // ¡AQUÍ ESTÁ LA MAGIA! Hacemos que el fondo rojo SÍ sea un botón
+        // El fondo rojo SÍ es un botón funcional
         btnDeleteBg.onclick = () => {
-            // Verificamos si el producto está deslizado (para no borrar sin querer)
             const li = wrapper.querySelector('.item-compra');
             if (li.style.transform && li.style.transform.includes('-100%')) {
                 borrarProductoCompra(prod.id);
@@ -217,7 +216,8 @@ function activarSwipe(wrapper, li, id) {
     const UMBRAL = 80;
 
     li.addEventListener('touchstart', (e) => {
-        if (e.target.closest('input, button, .drag-handle')) return;
+        // AQUÍ ESTÁ EL FIX: Se quitó .drag-handle para que deje arrastrar
+        if (e.target.closest('input, button')) return;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY; currentX = 0; isDragging = true; isHorizontal = null; li.style.transition = 'none';
     }, { passive: true });
 
@@ -233,14 +233,15 @@ function activarSwipe(wrapper, li, id) {
 
     li.addEventListener('touchend', () => {
         if (!isDragging) return; isDragging = false; li.style.transition = 'transform 0.25s ease';
-        if (currentX < -UMBRAL) { li.style.transform = `translateX(-100%)`; /* NO borra de inmediato, espera a que toquen el fondo rojo */ } 
+        if (currentX < -UMBRAL) { li.style.transform = `translateX(-100%)`; } 
         else { li.style.transform = 'translateX(0)'; }
         currentX = 0;
     });
 
     // Soporte para mouse (PC)
     li.addEventListener('mousedown', (e) => {
-        if (e.target.closest('input, button, .drag-handle')) return;
+        // AQUÍ TAMBIÉN SE QUITÓ .drag-handle
+        if (e.target.closest('input, button')) return;
         startX = e.clientX; isDragging = true; isHorizontal = null; li.style.transition = 'none';
         const onMouseMove = (ev) => {
             if (!isDragging) return; const deltaX = ev.clientX - startX;
@@ -286,7 +287,6 @@ window.toggleComprado = function(id) {
     const lista = getListaActual(); const prod = lista.compraActual.find(p => p.id === id);
     if (prod) {
         prod.comprado = !prod.comprado;
-        // REACOMODAR: Al usar sort, garantizamos que suban/bajen siempre
         lista.compraActual.sort((a, b) => a.comprado - b.comprado);
         guardarTodo(); renderizarListaCompra();
     }

@@ -1,6 +1,6 @@
 // ============================================
 //   MANDADITO - Lógica principal v2.4.3
-//   Fix: Swipe borra directo, arrastre libre
+//   Fix: SortableJS arrastra el Wrapper en Compra
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -205,7 +205,6 @@ function activarSwipe(wrapper, li, id) {
     const UMBRAL = 80;
 
     li.addEventListener('touchstart', (e) => {
-        // AQUÍ ESTÁ EL FIX: Se vuelve a incluir .drag-handle
         if (e.target.closest('input, button, .drag-handle')) return;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY; currentX = 0; isDragging = true; isHorizontal = null; li.style.transition = 'none';
     }, { passive: true });
@@ -224,16 +223,13 @@ function activarSwipe(wrapper, li, id) {
         if (!isDragging) return; isDragging = false; li.style.transition = 'transform 0.25s ease';
         if (currentX < -UMBRAL) { 
             li.style.transform = `translateX(-100%)`; 
-            // Borra directo al soltar
             setTimeout(() => borrarProductoCompra(id), 150);
         } 
         else { li.style.transform = 'translateX(0)'; }
         currentX = 0;
     });
 
-    // Soporte para mouse (PC)
     li.addEventListener('mousedown', (e) => {
-        // AQUÍ TAMBIÉN
         if (e.target.closest('input, button, .drag-handle')) return;
         startX = e.clientX; isDragging = true; isHorizontal = null; li.style.transition = 'none';
         const onMouseMove = (ev) => {
@@ -362,14 +358,27 @@ btnBorrarLista.addEventListener('click', () => { if (listas.length === 1) { most
 
 function guardarTodo() { localStorage.setItem('mandadito_catalogo_maestro', JSON.stringify(catalogoMaestro)); localStorage.setItem('mandadito_listas', JSON.stringify(listas)); localStorage.setItem('mandadito_lista_actual', idListaActual); }
 
+// FIX DEFINITIVO: Drag and Drop para el Wrapper de Compra
 function activarDragAndDropWrapper() {
-    const listaUL = document.getElementById('lista-compras'); if (!listaUL) return; if (listaUL._sortableInstance) listaUL._sortableInstance.destroy();
+    const listaUL = document.getElementById('lista-compras'); 
+    if (!listaUL) return; 
+    if (listaUL._sortableInstance) listaUL._sortableInstance.destroy();
+    
     listaUL._sortableInstance = new Sortable(listaUL, {
-        animation: 150, handle: '.drag-handle', ghostClass: 'arrastrando',
+        animation: 150, 
+        handle: '.drag-handle', 
+        ghostClass: 'arrastrando',
         onEnd: function() {
-            const items = listaUL.querySelectorAll('.item-swipe-wrapper'); const nuevoOrden = []; const lista = getListaActual();
-            items.forEach(item => { const id = parseFloat(item.dataset.id); const prod = lista.compraActual.find(p => p.id === id); if (prod) nuevoOrden.push(prod); });
-            lista.compraActual = nuevoOrden; guardarTodo();
+            const items = listaUL.querySelectorAll('.item-swipe-wrapper'); 
+            const nuevoOrden = []; 
+            const lista = getListaActual();
+            items.forEach(item => { 
+                const id = parseFloat(item.dataset.id); 
+                const prod = lista.compraActual.find(p => p.id === id); 
+                if (prod) nuevoOrden.push(prod); 
+            });
+            lista.compraActual = nuevoOrden; 
+            guardarTodo();
         }
     });
 }

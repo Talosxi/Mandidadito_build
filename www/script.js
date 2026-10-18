@@ -1,6 +1,7 @@
 // ============================================
 //   MANDADITO - Lógica principal v2.4.2
 //   Fix visual: swipe "Eliminar" arriba
+//   Fix lógico: productos suben al despalomear
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -385,11 +386,8 @@ function renderizarListaCompra() {
     seleccionarTodoContainer.style.display = 'flex';
     mensajeVacio.style.display = 'none';
 
-    const noComprados = lista.compraActual.filter(p => !p.comprado);
-    const comprados = lista.compraActual.filter(p => p.comprado);
-    const ordenados = [...noComprados, ...comprados];
-
-    ordenados.forEach(prod => {
+    // El orden ahora se mantiene en la memoria, pero lo renderizamos tal cual está
+    lista.compraActual.forEach(prod => {
         const wrapper = document.createElement('div');
         wrapper.className = 'item-swipe-wrapper';
         wrapper.dataset.id = prod.id;
@@ -644,6 +642,12 @@ window.toggleComprado = function(id) {
     const prod = lista.compraActual.find(p => p.id === id);
     if (prod) {
         prod.comprado = !prod.comprado;
+        
+        // REACOMODAR: Primero los no comprados, luego los comprados
+        const noComprados = lista.compraActual.filter(p => !p.comprado);
+        const comprados = lista.compraActual.filter(p => p.comprado);
+        lista.compraActual = [...noComprados, ...comprados];
+
         guardarTodo();
         renderizarListaCompra();
     }
@@ -837,6 +841,12 @@ checkboxSeleccionarTodo.addEventListener('change', (e) => {
     if (!lista) return;
     const marcar = e.target.checked;
     lista.compraActual.forEach(p => p.comprado = marcar);
+    
+    // También reacomodamos si se usa el "Seleccionar Todo"
+    const noComprados = lista.compraActual.filter(p => !p.comprado);
+    const comprados = lista.compraActual.filter(p => p.comprado);
+    lista.compraActual = [...noComprados, ...comprados];
+
     guardarTodo();
     renderizarListaCompra();
 });

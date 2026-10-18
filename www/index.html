@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandadito</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Encabezado -->
+    <header>
+        <div class="logo-container">
+            <span class="panda">🐼</span>
+            <div class="titulo-container">
+                <h1>Mandadito</h1>
+                <span class="version">v2.4.2</span>
+            </div>
+        </div>
+        <div class="lista-selector" id="header-lista-selector">
+            <select id="selector-lista">
+                <!-- Se llena dinámicamente -->
+            </select>
+            <button id="btn-nueva-lista" title="Crear nueva lista">+</button>
+            <button id="btn-editar-lista" title="Editar lista (nombre y presupuesto)">✏️</button>
+            <button id="btn-borrar-lista" title="Borrar esta lista">🗑️</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Pantalla de Compra -->
+        <section id="compra-screen" class="screen active">
+            <div id="lista-compras-container">
+                <div id="seleccionar-todo-container" class="seleccionar-todo">
+                    <input type="checkbox" id="checkbox-seleccionar-todo">
+                    <label for="checkbox-seleccionar-todo" id="texto-seleccionar-todo">Seleccionar todo</label>
+                </div>
+                
+                <ul id="lista-compras"></ul>
+                <p id="mensaje-vacio">No hay productos en tu lista de compra. Ve a 📦 Productos y agrega los que necesites.</p>
+            </div>
+            
+            <div class="footer-compra" id="footer-compra">
+                <div class="total-container">
+                    <span>🛒 Total (palomeados):</span>
+                    <span id="total-compra">$0.00</span>
+                </div>
+                <div class="restante-container" id="restante-container" style="display: none;">
+                    <span id="restante-texto">💰 Restante:</span>
+                    <span id="restante-monto">$0.00</span>
+                </div>
+                <div class="botones-accion">
+                    <button id="btn-borrar-seleccionados" class="btn-danger">🗑️ Borrar</button>
+                    <button id="btn-comprado" class="btn-success">✅ Comprado</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pantalla de Productos (Catálogo Maestro) -->
+        <section id="productos-screen" class="screen">
+            <div id="lista-productos-container">
+                <div id="seleccionar-todos-productos-container" class="seleccionar-todo">
+                    <input type="checkbox" id="checkbox-seleccionar-todos-productos">
+                    <label for="checkbox-seleccionar-todos-productos" id="texto-seleccionar-todos-productos">Seleccionar todos</label>
+                </div>
+                
+                <ul id="lista-productos"></ul>
+                <p id="mensaje-productos-vacio">Aún no tienes productos en tu catálogo. Agrega uno en 🐼 Captura.</p>
+            </div>
+            
+            <button id="btn-agregar-a-compra" class="btn-flotante" style="display: none;">
+                ➕ Agregar a Compra (<span id="contador-seleccionados">0</span>)
+            </button>
+        </section>
+
+        <!-- Pantalla de Captura -->
+        <section id="captura-screen" class="screen">
+            <div class="input-group">
+                <label>Producto</label>
+                <input type="text" id="producto" placeholder="Ej. Leche">
+            </div>
+            <div class="input-group">
+                <label>Departamento</label>
+                <select id="departamento">
+                    <!-- Se llena dinámicamente -->
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Precio Unitario</label>
+                <input type="number" id="precio" placeholder="Ej. 25.50" step="0.01">
+            </div>
+            <div class="input-group">
+                <label>Cantidad</label>
+                <input type="number" id="cantidad" placeholder="Ej. 2" value="1" min="1">
+            </div>
+            <button id="btn-agregar" class="btn-primary">Agregar al catálogo</button>
+        </section>
+    </main>
+
+    <!-- Barra de Navegación Inferior -->
+    <nav class="bottom-nav">
+        <button id="nav-compra" class="nav-btn active">
+            <span class="icon">🛒</span>
+            <span>Compra</span>
+        </button>
+        <button id="nav-productos" class="nav-btn">
+            <span class="icon">📦</span>
+            <span>Productos</span>
+        </button>
+        <button id="nav-captura" class="nav-btn">
+            <span class="icon">🐼</span>
+            <span>Captura</span>
+        </button>
+    </nav>
+
+    <!-- Modal para Agregar a Compra -->
+    <div id="modal-agregar-compra" class="modal-overlay">
+        <div class="modal-contenido">
+            <h3>Agregar a:</h3>
+            <div id="modal-listas-existentes" class="modal-listas">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <div class="modal-separador">─── O ───</div>
+            <button id="btn-crear-nueva-lista-modal" class="btn-crear-modal">➕ Crear nueva lista</button>
+            <div class="modal-botones">
+                <button id="btn-cancelar-modal" class="btn-cancelar">CANCELAR</button>
+                <button id="btn-confirmar-modal" class="btn-confirmar">AGREGAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Producto -->
+    <div id="modal-editar-producto" class="modal-overlay">
+        <div class="modal-contenido">
+            <h3>✏️ Editar Producto</h3>
+            <div class="input-group">
+                <label>Nombre:</label>
+                <input type="text" id="editar-nombre">
+            </div>
+            <div class="input-group">
+                <label>Departamento:</label>
+                <select id="editar-departamento"></select>
+            </div>
+            <div class="input-group">
+                <label>Precio Unitario:</label>
+                <input type="number" id="editar-precio" step="0.01">
+            </div>
+            <div class="input-group">
+                <label>Cantidad:</label>
+                <input type="number" id="editar-cantidad" min="1">
+            </div>
+            <div class="modal-botones">
+                <button id="btn-cancelar-edicion" class="btn-cancelar">CANCELAR</button>
+                <button id="btn-guardar-edicion" class="btn-confirmar">GUARDAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Lista (nombre + presupuesto) -->
+    <div id="modal-editar-lista" class="modal-overlay">
+        <div class="modal-contenido">
+            <h3>✏️ Editar Lista</h3>
+            <div class="input-group">
+                <label>📝 Nombre:</label>
+                <input type="text" id="editar-lista-nombre">
+            </div>
+            <div class="input-group">
+                <label>💰 Presupuesto:</label>
+                <input type="number" id="editar-lista-presupuesto" step="0.01" min="0" placeholder="Ej. 500.00">
+            </div>
+            <div class="modal-botones">
+                <button id="btn-cancelar-editar-lista" class="btn-cancelar">CANCELAR</button>
+                <button id="btn-guardar-editar-lista" class="btn-confirmar">GUARDAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast con opción de deshacer -->
+    <div id="toast" class="toast">
+        <span id="toast-texto"></span>
+        <button id="toast-undo" class="toast-undo" style="display: none;">↩️ Deshacer</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

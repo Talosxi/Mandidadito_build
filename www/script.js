@@ -176,7 +176,6 @@ function renderizarListaCompra() {
     seleccionarTodoContainer.style.display = 'flex'; mensajeVacio.style.display = 'none';
 
     lista.compraActual.forEach(prod => {
-        // Ya NO creamos el div del fondo rojo (swipe-bg-delete)
         const wrapper = document.createElement('div'); wrapper.className = 'item-swipe-wrapper'; wrapper.dataset.id = prod.id;
 
         const li = document.createElement('li'); li.className = 'item-compra' + (prod.comprado ? ' comprado' : ''); li.dataset.id = prod.id;
@@ -206,8 +205,8 @@ function activarSwipe(wrapper, li, id) {
     const UMBRAL = 80;
 
     li.addEventListener('touchstart', (e) => {
-        // Dejamos libre el drag-handle para que funcione el arrastre
-        if (e.target.closest('input, button')) return;
+        // AQUÍ ESTÁ EL FIX: Se vuelve a incluir .drag-handle
+        if (e.target.closest('input, button, .drag-handle')) return;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY; currentX = 0; isDragging = true; isHorizontal = null; li.style.transition = 'none';
     }, { passive: true });
 
@@ -225,7 +224,7 @@ function activarSwipe(wrapper, li, id) {
         if (!isDragging) return; isDragging = false; li.style.transition = 'transform 0.25s ease';
         if (currentX < -UMBRAL) { 
             li.style.transform = `translateX(-100%)`; 
-            // MAGIA: Borra directo al soltar si pasó el umbral
+            // Borra directo al soltar
             setTimeout(() => borrarProductoCompra(id), 150);
         } 
         else { li.style.transform = 'translateX(0)'; }
@@ -234,7 +233,8 @@ function activarSwipe(wrapper, li, id) {
 
     // Soporte para mouse (PC)
     li.addEventListener('mousedown', (e) => {
-        if (e.target.closest('input, button')) return;
+        // AQUÍ TAMBIÉN
+        if (e.target.closest('input, button, .drag-handle')) return;
         startX = e.clientX; isDragging = true; isHorizontal = null; li.style.transition = 'none';
         const onMouseMove = (ev) => {
             if (!isDragging) return; const deltaX = ev.clientX - startX;

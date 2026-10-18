@@ -1,6 +1,6 @@
 // ============================================
 //   MANDADITO - Lógica principal v2.4.3
-//   Fix: Botón eliminar activo y arrastre libre
+//   Fix: Swipe borra directo, arrastre libre
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -176,18 +176,8 @@ function renderizarListaCompra() {
     seleccionarTodoContainer.style.display = 'flex'; mensajeVacio.style.display = 'none';
 
     lista.compraActual.forEach(prod => {
+        // Ya NO creamos el div del fondo rojo (swipe-bg-delete)
         const wrapper = document.createElement('div'); wrapper.className = 'item-swipe-wrapper'; wrapper.dataset.id = prod.id;
-        
-        const btnDeleteBg = document.createElement('div'); 
-        btnDeleteBg.className = 'swipe-bg-delete';
-        // El fondo rojo SÍ es un botón funcional
-        btnDeleteBg.onclick = () => {
-            const li = wrapper.querySelector('.item-compra');
-            if (li.style.transform && li.style.transform.includes('-100%')) {
-                borrarProductoCompra(prod.id);
-            }
-        };
-        wrapper.appendChild(btnDeleteBg);
 
         const li = document.createElement('li'); li.className = 'item-compra' + (prod.comprado ? ' comprado' : ''); li.dataset.id = prod.id;
         const totalProducto = (prod.precioUnitario * prod.cantidad).toFixed(2);
@@ -216,7 +206,7 @@ function activarSwipe(wrapper, li, id) {
     const UMBRAL = 80;
 
     li.addEventListener('touchstart', (e) => {
-        // AQUÍ ESTÁ EL FIX: Se quitó .drag-handle para que deje arrastrar
+        // Dejamos libre el drag-handle para que funcione el arrastre
         if (e.target.closest('input, button')) return;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY; currentX = 0; isDragging = true; isHorizontal = null; li.style.transition = 'none';
     }, { passive: true });
@@ -233,14 +223,17 @@ function activarSwipe(wrapper, li, id) {
 
     li.addEventListener('touchend', () => {
         if (!isDragging) return; isDragging = false; li.style.transition = 'transform 0.25s ease';
-        if (currentX < -UMBRAL) { li.style.transform = `translateX(-100%)`; } 
+        if (currentX < -UMBRAL) { 
+            li.style.transform = `translateX(-100%)`; 
+            // MAGIA: Borra directo al soltar si pasó el umbral
+            setTimeout(() => borrarProductoCompra(id), 150);
+        } 
         else { li.style.transform = 'translateX(0)'; }
         currentX = 0;
     });
 
     // Soporte para mouse (PC)
     li.addEventListener('mousedown', (e) => {
-        // AQUÍ TAMBIÉN SE QUITÓ .drag-handle
         if (e.target.closest('input, button')) return;
         startX = e.clientX; isDragging = true; isHorizontal = null; li.style.transition = 'none';
         const onMouseMove = (ev) => {
@@ -250,7 +243,10 @@ function activarSwipe(wrapper, li, id) {
         };
         const onMouseUp = () => {
             if (!isDragging) return; isDragging = false; document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); li.style.transition = 'transform 0.25s ease';
-            if (currentX < -UMBRAL) { li.style.transform = `translateX(-100%)`; } else { li.style.transform = 'translateX(0)'; }
+            if (currentX < -UMBRAL) { 
+                li.style.transform = `translateX(-100%)`; 
+                setTimeout(() => borrarProductoCompra(id), 150);
+            } else { li.style.transform = 'translateX(0)'; }
             currentX = 0;
         };
         document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);

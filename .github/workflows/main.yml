@@ -40,36 +40,7 @@ jobs:
           VERSION_CODE=$((FECHA * 100 + ${{ github.run_number }}))
           sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
           echo "versionCode actualizado a: $VERSION_CODE"
-      
-      - name: Decodificar Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/mandadito.keystore
-      
-      - name: Configurar firma en build.gradle
-        run: |
-          cat >> android/app/build.gradle << 'EOF'
-
-          // Configuración de firma
-          android {
-              signingConfigs {
-                  release {
-                      storeFile file("mandadito.keystore")
-                      storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
-                      keyAlias "${{ secrets.KEY_ALIAS }}"
-                      keyPassword "${{ secrets.KEY_PASSWORD }}"
-                  }
-              }
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                  }
-                  debug {
-                      signingConfig signingConfigs.release
-                  }
-              }
-          }
-          EOF
-      
+          
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       
       - name: Renombrar APK con versión

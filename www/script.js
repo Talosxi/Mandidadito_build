@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.4.5
-//   Fix: Puntitos a la izquierda + Fondo rojo al swipe
+//   MANDADITO - Lógica principal v2.4.6
+//   Fix: Forzar el arrastre del drag-handle en Compra
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -178,7 +178,6 @@ function renderizarListaCompra() {
     lista.compraActual.forEach(prod => {
         const wrapper = document.createElement('div'); wrapper.className = 'item-swipe-wrapper'; wrapper.dataset.id = prod.id;
 
-        // FONDO ROJO DE AVISO AL DESLIZAR
         const bgDelete = document.createElement('div'); 
         bgDelete.className = 'swipe-bg-delete';
         wrapper.appendChild(bgDelete);
@@ -187,7 +186,6 @@ function renderizarListaCompra() {
         const totalProducto = (prod.precioUnitario * prod.cantidad).toFixed(2);
         const textoAnterior = prod.precioAnterior ? `Compra anterior: $${prod.precioAnterior.toFixed(2)}` : 'Sin registro previo';
 
-        // AQUÍ ESTÁ EL CAMBIO: El drag-handle ahora está a la izquierda
         li.innerHTML = `
             <div class="item-header">
                 <span class="drag-handle">⠿</span>
@@ -364,14 +362,29 @@ btnBorrarLista.addEventListener('click', () => { if (listas.length === 1) { most
 
 function guardarTodo() { localStorage.setItem('mandadito_catalogo_maestro', JSON.stringify(catalogoMaestro)); localStorage.setItem('mandadito_listas', JSON.stringify(listas)); localStorage.setItem('mandadito_lista_actual', idListaActual); }
 
+// FIX DEFINITIVO: Forzar que SortableJS tome el control del drag-handle
 function activarDragAndDropWrapper() {
-    const listaUL = document.getElementById('lista-compras'); if (!listaUL) return; if (listaUL._sortableInstance) listaUL._sortableInstance.destroy();
+    const listaUL = document.getElementById('lista-compras'); 
+    if (!listaUL) return; 
+    if (listaUL._sortableInstance) listaUL._sortableInstance.destroy();
+    
     listaUL._sortableInstance = new Sortable(listaUL, {
-        animation: 150, handle: '.drag-handle', ghostClass: 'arrastrando',
+        animation: 150, 
+        handle: '.drag-handle', 
+        filter: '.drag-handle', // Le decimos que SI toca el handle, lo tome
+        preventOnFilter: false, // Evitamos que el Swipe se lo coma
+        ghostClass: 'arrastrando',
         onEnd: function() {
-            const items = listaUL.querySelectorAll('.item-swipe-wrapper'); const nuevoOrden = []; const lista = getListaActual();
-            items.forEach(item => { const id = parseFloat(item.dataset.id); const prod = lista.compraActual.find(p => p.id === id); if (prod) nuevoOrden.push(prod); });
-            lista.compraActual = nuevoOrden; guardarTodo();
+            const items = listaUL.querySelectorAll('.item-swipe-wrapper'); 
+            const nuevoOrden = []; 
+            const lista = getListaActual();
+            items.forEach(item => { 
+                const id = parseFloat(item.dataset.id); 
+                const prod = lista.compraActual.find(p => p.id === id); 
+                if (prod) nuevoOrden.push(prod); 
+            });
+            lista.compraActual = nuevoOrden; 
+            guardarTodo();
         }
     });
 }

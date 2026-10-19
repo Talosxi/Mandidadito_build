@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.4.3
-//   Fix: SortableJS arrastra el Wrapper en Compra
+//   MANDADITO - Lógica principal v2.4.5
+//   Fix: Puntitos a la izquierda + Fondo rojo al swipe
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -178,12 +178,19 @@ function renderizarListaCompra() {
     lista.compraActual.forEach(prod => {
         const wrapper = document.createElement('div'); wrapper.className = 'item-swipe-wrapper'; wrapper.dataset.id = prod.id;
 
+        // FONDO ROJO DE AVISO AL DESLIZAR
+        const bgDelete = document.createElement('div'); 
+        bgDelete.className = 'swipe-bg-delete';
+        wrapper.appendChild(bgDelete);
+
         const li = document.createElement('li'); li.className = 'item-compra' + (prod.comprado ? ' comprado' : ''); li.dataset.id = prod.id;
         const totalProducto = (prod.precioUnitario * prod.cantidad).toFixed(2);
         const textoAnterior = prod.precioAnterior ? `Compra anterior: $${prod.precioAnterior.toFixed(2)}` : 'Sin registro previo';
 
+        // AQUÍ ESTÁ EL CAMBIO: El drag-handle ahora está a la izquierda
         li.innerHTML = `
             <div class="item-header">
+                <span class="drag-handle">⠿</span>
                 <input type="checkbox" ${prod.comprado ? 'checked' : ''} onchange="toggleComprado(${prod.id})">
                 <span class="nombre">${getEmoji(prod.departamento)} ${prod.nombre}</span>
             </div>
@@ -191,7 +198,6 @@ function renderizarListaCompra() {
                 <div><label>Cant:</label><input type="number" value="${prod.cantidad}" min="1" onblur="actualizarCantidad(${prod.id}, this.value)"></div>
                 <div><label>P.Unit:</label><input type="number" value="${prod.precioUnitario}" step="0.01" onblur="actualizarPrecio(${prod.id}, this.value)"></div>
                 <div class="item-total">Total: $${totalProducto}</div>
-                <span class="drag-handle">⠿</span>
             </div>
             <div class="precio-anterior">${textoAnterior}</div>`;
         wrapper.appendChild(li); listaCompras.appendChild(wrapper);
@@ -358,27 +364,14 @@ btnBorrarLista.addEventListener('click', () => { if (listas.length === 1) { most
 
 function guardarTodo() { localStorage.setItem('mandadito_catalogo_maestro', JSON.stringify(catalogoMaestro)); localStorage.setItem('mandadito_listas', JSON.stringify(listas)); localStorage.setItem('mandadito_lista_actual', idListaActual); }
 
-// FIX DEFINITIVO: Drag and Drop para el Wrapper de Compra
 function activarDragAndDropWrapper() {
-    const listaUL = document.getElementById('lista-compras'); 
-    if (!listaUL) return; 
-    if (listaUL._sortableInstance) listaUL._sortableInstance.destroy();
-    
+    const listaUL = document.getElementById('lista-compras'); if (!listaUL) return; if (listaUL._sortableInstance) listaUL._sortableInstance.destroy();
     listaUL._sortableInstance = new Sortable(listaUL, {
-        animation: 150, 
-        handle: '.drag-handle', 
-        ghostClass: 'arrastrando',
+        animation: 150, handle: '.drag-handle', ghostClass: 'arrastrando',
         onEnd: function() {
-            const items = listaUL.querySelectorAll('.item-swipe-wrapper'); 
-            const nuevoOrden = []; 
-            const lista = getListaActual();
-            items.forEach(item => { 
-                const id = parseFloat(item.dataset.id); 
-                const prod = lista.compraActual.find(p => p.id === id); 
-                if (prod) nuevoOrden.push(prod); 
-            });
-            lista.compraActual = nuevoOrden; 
-            guardarTodo();
+            const items = listaUL.querySelectorAll('.item-swipe-wrapper'); const nuevoOrden = []; const lista = getListaActual();
+            items.forEach(item => { const id = parseFloat(item.dataset.id); const prod = lista.compraActual.find(p => p.id === id); if (prod) nuevoOrden.push(prod); });
+            lista.compraActual = nuevoOrden; guardarTodo();
         }
     });
 }

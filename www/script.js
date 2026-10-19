@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.4.8
-//   Fix: Quitar emojis en Compra para liberar arrastre
+//   MANDADITO - Lógica principal v2.4.9
+//   Fix: Drag and drop nativo en Compra
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -151,6 +151,7 @@ function renderizarProductos() {
             subLista.appendChild(li);
         });
         listaProductos.appendChild(subLista);
+        // En productos seguimos usando SortableJS porque sí funciona
         activarDragAndDropCategoria(subLista, dep.nombre);
     });
     actualizarBotonAgregarACompra(); actualizarCheckboxSeleccionarTodos();
@@ -186,7 +187,6 @@ function renderizarListaCompra() {
         const totalProducto = (prod.precioUnitario * prod.cantidad).toFixed(2);
         const textoAnterior = prod.precioAnterior ? `Compra anterior: $${prod.precioAnterior.toFixed(2)}` : 'Sin registro previo';
 
-        // AQUÍ ESTÁ EL FIX: Quitamos el getEmoji() del nombre para que no interfiera con el drag
         li.innerHTML = `
             <div class="item-header">
                 <span class="drag-handle">⠿</span>
@@ -200,9 +200,96 @@ function renderizarListaCompra() {
             </div>
             <div class="precio-anterior">${textoAnterior}</div>`;
         wrapper.appendChild(li); listaCompras.appendChild(wrapper);
+        
         activarSwipe(wrapper, li, prod.id);
+        activarDragNativo(wrapper, li, prod.id); // <-- AQUÍ LLAMAMOS A NUESTRA NUEVA FUNCIÓN
     });
-    calcularTotal(); actualizarCheckboxSeleccionarTodo(); activarDragAndDropWrapper(); actualizarPresupuestoUI();
+    calcularTotal(); actualizarCheckboxSeleccionarTodo(); actualizarPresupuestoUI();
+}
+
+// --- DRAG AND DROP NATIVO (La nueva magia) ---
+function activarDragNativo(wrapper, li, id) {
+    const handle = li.querySelector('.drag-handle');
+    let isDragging = false;
+    let startY = 0;
+    let placeholder = document.createElement('div');
+
+    handle.addEventListener('touchstart', (e) => {
+        e.stopPropagation(); // Detiene el swipe
+        isDragging = true;
+        startY = e.touches[0].clientY;
+        
+        // Efecto visual de que se levantó
+        wrapper.style.zIndex = '1000';
+        wrapper.style.position = 'relative';
+        wrapper.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
+        wrapper.style.transform = 'scale(1.02)';
+        wrapper.style.transition = 'none';
+
+        // Creamos un espacio vacío donde estaba el producto
+        placeholder.style.height = `${wrapper.offsetHeight}px`;
+        placeholder.style.marginTop = '4px';
+        wrapper.parentNode.insertBefore(placeholder, wrapper);
+    }, { passive: false });
+
+    handle.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault(); // Evita que la pantalla haga scroll
+        const deltaY = e.touches[0].clientY - startY;
+        wrapper.style.transform = `translateY(${deltaY}px) scale(1.02)`;
+
+        // Magia para reordenar visualmente (intercambia con otros wrappers)
+        const wrappers = [...listaCompras.querySelectorAll('.item-swipe-wrapper')];
+        const currentIndex = wrappers.indexOf(wrapper);
+        
+        for (let i = 0; i < wrappers.length; i++) {
+            if (i === currentIndex) continue;
+            const other = wrappers[i];
+            const otherRect = other.getBoundingClientRect();
+            const otherMiddle = otherRect.top + otherRect.height / 2;
+            
+            if (e.touches[0].clientY > otherMiddle && i > currentIndex) {
+                // Mover hacia abajo
+                listaCompras.insertBefore(wrapper, other.nextSibling);
+                startY = e.touches[0].clientY - deltaY + otherRect.height;
+                break;
+            } else if (e.touches[0].clientY < otherMiddle && i < currentIndex) {
+                // Mover hacia arriba
+                listaCompras.insertBefore(wrapper, other);
+                startY = e.touches[0].clientY - deltaY - otherRect.height;
+                break;
+            }
+        }
+    }, { passive: false });
+
+    handle.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        // Quitamos el efecto visual
+        wrapper.style.zIndex = '';
+        wrapper.style.position = '';
+        wrapper.style.boxShadow = '';
+        wrapper.style.transform = '';
+        wrapper.style.transition = 'transform 0.2s ease';
+
+        // Quitamos el espacio vacío
+        if (placeholder.parentNode) {
+            placeholder.parentNode.removeChild(placeholder);
+        }
+
+        // Guardamos el nuevo orden
+        const items = listaCompras.querySelectorAll('.item-swipe-wrapper'); 
+        const nuevoOrden = []; 
+        const lista = getListaActual();
+        items.forEach(item => { 
+            const id = parseFloat(item.dataset.id); 
+            const prod = lista.compraActual.find(p => p.id === id); 
+            if (prod) nuevoOrden.push(prod); 
+        });
+        lista.compraActual = nuevoOrden; 
+        guardarTodo();
+    });
 }
 
 function activarSwipe(wrapper, li, id) {
@@ -232,25 +319,6 @@ function activarSwipe(wrapper, li, id) {
         } 
         else { li.style.transform = 'translateX(0)'; }
         currentX = 0;
-    });
-
-    li.addEventListener('mousedown', (e) => {
-        if (e.target.closest('input, button, .drag-handle')) return;
-        startX = e.clientX; isDragging = true; isHorizontal = null; li.style.transition = 'none';
-        const onMouseMove = (ev) => {
-            if (!isDragging) return; const deltaX = ev.clientX - startX;
-            if (isHorizontal === null) { if (Math.abs(deltaX) > 5) isHorizontal = true; }
-            if (isHorizontal) { currentX = Math.min(0, deltaX); li.style.transform = `translateX(${currentX}px)`; }
-        };
-        const onMouseUp = () => {
-            if (!isDragging) return; isDragging = false; document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); li.style.transition = 'transform 0.25s ease';
-            if (currentX < -UMBRAL) { 
-                li.style.transform = `translateX(-100%)`; 
-                setTimeout(() => borrarProductoCompra(id), 150);
-            } else { li.style.transform = 'translateX(0)'; }
-            currentX = 0;
-        };
-        document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);
     });
 }
 
@@ -363,33 +431,7 @@ btnBorrarLista.addEventListener('click', () => { if (listas.length === 1) { most
 
 function guardarTodo() { localStorage.setItem('mandadito_catalogo_maestro', JSON.stringify(catalogoMaestro)); localStorage.setItem('mandadito_listas', JSON.stringify(listas)); localStorage.setItem('mandadito_lista_actual', idListaActual); }
 
-// FIX DEFINITIVO: Forzar que SortableJS tome el control del drag-handle
-function activarDragAndDropWrapper() {
-    const listaUL = document.getElementById('lista-compras'); 
-    if (!listaUL) return; 
-    if (listaUL._sortableInstance) listaUL._sortableInstance.destroy();
-    
-    listaUL._sortableInstance = new Sortable(listaUL, {
-        animation: 150, 
-        handle: '.drag-handle', 
-        filter: '.drag-handle', 
-        preventOnFilter: false, 
-        ghostClass: 'arrastrando',
-        onEnd: function() {
-            const items = listaUL.querySelectorAll('.item-swipe-wrapper'); 
-            const nuevoOrden = []; 
-            const lista = getListaActual();
-            items.forEach(item => { 
-                const id = parseFloat(item.dataset.id); 
-                const prod = lista.compraActual.find(p => p.id === id); 
-                if (prod) nuevoOrden.push(prod); 
-            });
-            lista.compraActual = nuevoOrden; 
-            guardarTodo();
-        }
-    });
-}
-
+// Función de SortableJS que dejamos SOLO para Productos
 function activarDragAndDropCategoria(subLista, departamento) {
     if (subLista._sortableInstance) subLista._sortableInstance.destroy();
     subLista._sortableInstance = new Sortable(subLista, {

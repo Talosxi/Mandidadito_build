@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.4.6
-//   Fix: Forzar el arrastre del drag-handle en Compra
+//   MANDADITO - Lógica principal v2.4.8
+//   Fix: Quitar emojis en Compra para liberar arrastre
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -186,11 +186,12 @@ function renderizarListaCompra() {
         const totalProducto = (prod.precioUnitario * prod.cantidad).toFixed(2);
         const textoAnterior = prod.precioAnterior ? `Compra anterior: $${prod.precioAnterior.toFixed(2)}` : 'Sin registro previo';
 
+        // AQUÍ ESTÁ EL FIX: Quitamos el getEmoji() del nombre para que no interfiera con el drag
         li.innerHTML = `
             <div class="item-header">
                 <span class="drag-handle">⠿</span>
                 <input type="checkbox" ${prod.comprado ? 'checked' : ''} onchange="toggleComprado(${prod.id})">
-                <span class="nombre">${getEmoji(prod.departamento)} ${prod.nombre}</span>
+                <span class="nombre">${prod.nombre}</span>
             </div>
             <div class="item-detalles">
                 <div><label>Cant:</label><input type="number" value="${prod.cantidad}" min="1" onblur="actualizarCantidad(${prod.id}, this.value)"></div>
@@ -371,8 +372,8 @@ function activarDragAndDropWrapper() {
     listaUL._sortableInstance = new Sortable(listaUL, {
         animation: 150, 
         handle: '.drag-handle', 
-        filter: '.drag-handle', // Le decimos que SI toca el handle, lo tome
-        preventOnFilter: false, // Evitamos que el Swipe se lo coma
+        filter: '.drag-handle', 
+        preventOnFilter: false, 
         ghostClass: 'arrastrando',
         onEnd: function() {
             const items = listaUL.querySelectorAll('.item-swipe-wrapper'); 

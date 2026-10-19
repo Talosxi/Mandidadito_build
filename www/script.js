@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.4.9
-//   Fix: Drag and drop nativo en Compra
+//   MANDADITO - Lógica principal v2.5.1
+//   Fix: Drag nativo con offset + Emojis de vuelta
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -151,7 +151,6 @@ function renderizarProductos() {
             subLista.appendChild(li);
         });
         listaProductos.appendChild(subLista);
-        // En productos seguimos usando SortableJS porque sí funciona
         activarDragAndDropCategoria(subLista, dep.nombre);
     });
     actualizarBotonAgregarACompra(); actualizarCheckboxSeleccionarTodos();
@@ -187,11 +186,12 @@ function renderizarListaCompra() {
         const totalProducto = (prod.precioUnitario * prod.cantidad).toFixed(2);
         const textoAnterior = prod.precioAnterior ? `Compra anterior: $${prod.precioAnterior.toFixed(2)}` : 'Sin registro previo';
 
+        // LOS EMOJIS ESTÁN DE VUELTA AQUÍ
         li.innerHTML = `
             <div class="item-header">
                 <span class="drag-handle">⠿</span>
                 <input type="checkbox" ${prod.comprado ? 'checked' : ''} onchange="toggleComprado(${prod.id})">
-                <span class="nombre">${prod.nombre}</span>
+                <span class="nombre">${getEmoji(prod.departamento)} ${prod.nombre}</span>
             </div>
             <div class="item-detalles">
                 <div><label>Cant:</label><input type="number" value="${prod.cantidad}" min="1" onblur="actualizarCantidad(${prod.id}, this.value)"></div>
@@ -202,31 +202,33 @@ function renderizarListaCompra() {
         wrapper.appendChild(li); listaCompras.appendChild(wrapper);
         
         activarSwipe(wrapper, li, prod.id);
-        activarDragNativo(wrapper, li, prod.id); // <-- AQUÍ LLAMAMOS A NUESTRA NUEVA FUNCIÓN
+        activarDragNativo(wrapper, li, prod.id);
     });
     calcularTotal(); actualizarCheckboxSeleccionarTodo(); actualizarPresupuestoUI();
 }
 
-// --- DRAG AND DROP NATIVO (La nueva magia) ---
+// --- DRAG AND DROP NATIVO CON OFFSET EXACTO ---
 function activarDragNativo(wrapper, li, id) {
     const handle = li.querySelector('.drag-handle');
     let isDragging = false;
     let startY = 0;
+    let offsetY = 0; 
     let placeholder = document.createElement('div');
 
     handle.addEventListener('touchstart', (e) => {
-        e.stopPropagation(); // Detiene el swipe
+        e.stopPropagation(); 
         isDragging = true;
+        
+        const rect = wrapper.getBoundingClientRect();
+        offsetY = e.touches[0].clientY - rect.top;
         startY = e.touches[0].clientY;
         
-        // Efecto visual de que se levantó
         wrapper.style.zIndex = '1000';
         wrapper.style.position = 'relative';
         wrapper.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
         wrapper.style.transform = 'scale(1.02)';
         wrapper.style.transition = 'none';
 
-        // Creamos un espacio vacío donde estaba el producto
         placeholder.style.height = `${wrapper.offsetHeight}px`;
         placeholder.style.marginTop = '4px';
         wrapper.parentNode.insertBefore(placeholder, wrapper);
@@ -234,11 +236,13 @@ function activarDragNativo(wrapper, li, id) {
 
     handle.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        e.preventDefault(); // Evita que la pantalla haga scroll
-        const deltaY = e.touches[0].clientY - startY;
+        e.preventDefault(); 
+        
+        const clientY = e.touches[0].clientY;
+        const deltaY = clientY - startY; 
+        
         wrapper.style.transform = `translateY(${deltaY}px) scale(1.02)`;
 
-        // Magia para reordenar visualmente (intercambia con otros wrappers)
         const wrappers = [...listaCompras.querySelectorAll('.item-swipe-wrapper')];
         const currentIndex = wrappers.indexOf(wrapper);
         
@@ -248,15 +252,13 @@ function activarDragNativo(wrapper, li, id) {
             const otherRect = other.getBoundingClientRect();
             const otherMiddle = otherRect.top + otherRect.height / 2;
             
-            if (e.touches[0].clientY > otherMiddle && i > currentIndex) {
-                // Mover hacia abajo
+            if (clientY > otherMiddle && i > currentIndex) {
                 listaCompras.insertBefore(wrapper, other.nextSibling);
-                startY = e.touches[0].clientY - deltaY + otherRect.height;
+                startY = clientY - deltaY + otherRect.height;
                 break;
-            } else if (e.touches[0].clientY < otherMiddle && i < currentIndex) {
-                // Mover hacia arriba
+            } else if (clientY < otherMiddle && i < currentIndex) {
                 listaCompras.insertBefore(wrapper, other);
-                startY = e.touches[0].clientY - deltaY - otherRect.height;
+                startY = clientY - deltaY - otherRect.height;
                 break;
             }
         }
@@ -266,19 +268,16 @@ function activarDragNativo(wrapper, li, id) {
         if (!isDragging) return;
         isDragging = false;
         
-        // Quitamos el efecto visual
         wrapper.style.zIndex = '';
         wrapper.style.position = '';
         wrapper.style.boxShadow = '';
         wrapper.style.transform = '';
         wrapper.style.transition = 'transform 0.2s ease';
 
-        // Quitamos el espacio vacío
         if (placeholder.parentNode) {
             placeholder.parentNode.removeChild(placeholder);
         }
 
-        // Guardamos el nuevo orden
         const items = listaCompras.querySelectorAll('.item-swipe-wrapper'); 
         const nuevoOrden = []; 
         const lista = getListaActual();

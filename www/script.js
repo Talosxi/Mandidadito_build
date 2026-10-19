@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.5.2
-//   Fix: Drag nativo anclado al dedo
+//   MANDADITO - Lógica principal v2.5.3
+//   Fix: Drag nativo fluido (sin desfases)
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -206,11 +206,13 @@ function renderizarListaCompra() {
     calcularTotal(); actualizarCheckboxSeleccionarTodo(); actualizarPresupuestoUI();
 }
 
-// --- DRAG AND DROP NATIVO (Anclado al dedo) ---
+// --- DRAG AND DROP NATIVO FLUIDO ---
 function activarDragNativo(wrapper, li, id) {
     const handle = li.querySelector('.drag-handle');
     let isDragging = false;
     let startY = 0;
+    let currentY = 0;
+    let initialTop = 0;
     let placeholder = document.createElement('div');
 
     handle.addEventListener('touchstart', (e) => {
@@ -219,6 +221,7 @@ function activarDragNativo(wrapper, li, id) {
         startY = e.touches[0].clientY;
         
         const rect = wrapper.getBoundingClientRect();
+        initialTop = rect.top;
 
         wrapper.style.zIndex = '1000';
         wrapper.style.position = 'relative';
@@ -230,6 +233,7 @@ function activarDragNativo(wrapper, li, id) {
         placeholder.style.marginTop = '4px';
         wrapper.parentNode.insertBefore(placeholder, wrapper);
 
+        // Hacemos que el wrapper flote de forma absoluta para que nada lo empuje
         wrapper.style.position = 'fixed';
         wrapper.style.width = `${rect.width}px`;
         wrapper.style.top = `${rect.top}px`;
@@ -240,11 +244,14 @@ function activarDragNativo(wrapper, li, id) {
         if (!isDragging) return;
         e.preventDefault(); 
         
-        const clientY = e.touches[0].clientY;
-        const deltaY = clientY - startY; 
+        currentY = e.touches[0].clientY;
+        // El movimiento es puramente la diferencia de Y, sin importar cuántos brincos dé
+        const deltaY = currentY - startY;
         
+        // Movemos el cuadro con transform (súper fluido)
         wrapper.style.transform = `translateY(${deltaY}px) scale(1.02)`;
 
+        // Lógica de reordenamiento (basada en la posición del dedo)
         const wrappers = [...listaCompras.querySelectorAll('.item-swipe-wrapper')];
         const currentIndex = wrappers.indexOf(wrapper);
         
@@ -254,13 +261,11 @@ function activarDragNativo(wrapper, li, id) {
             const otherRect = other.getBoundingClientRect();
             const otherMiddle = otherRect.top + otherRect.height / 2;
             
-            if (clientY > otherMiddle && i > currentIndex) {
+            if (currentY > otherMiddle && i > currentIndex) {
                 listaCompras.insertBefore(wrapper, other.nextSibling);
-                startY = clientY - deltaY + otherRect.height;
                 break;
-            } else if (clientY < otherMiddle && i < currentIndex) {
+            } else if (currentY < otherMiddle && i < currentIndex) {
                 listaCompras.insertBefore(wrapper, other);
-                startY = clientY - deltaY - otherRect.height;
                 break;
             }
         }
@@ -270,6 +275,7 @@ function activarDragNativo(wrapper, li, id) {
         if (!isDragging) return;
         isDragging = false;
         
+        // Reseteamos estilos
         wrapper.style.zIndex = '';
         wrapper.style.position = '';
         wrapper.style.boxShadow = '';
@@ -284,6 +290,7 @@ function activarDragNativo(wrapper, li, id) {
             placeholder.parentNode.removeChild(placeholder);
         }
 
+        // Guardamos el orden
         const items = listaCompras.querySelectorAll('.item-swipe-wrapper'); 
         const nuevoOrden = []; 
         const lista = getListaActual();

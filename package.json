@@ -1,6 +1,6 @@
 {
   "name": "mandadito",
-  "version": "2.4.16",
+  "version": "2.4.17",
   "private": true,
   "dependencies": {
     "@capacitor/android": "^6.2.0",

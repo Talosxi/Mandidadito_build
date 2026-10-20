@@ -12,6 +12,12 @@ body {
     height: 100vh;
 }
 
+/* EL CANDADO PARA EL DRAG */
+body.arrastrando-activo {
+    overflow: hidden !important;
+    touch-action: none !important;
+}
+
 /* ENCABEZADO */
 header {
     background-color: #4CAF50;
@@ -88,8 +94,8 @@ main { flex: 1; padding: 12px; overflow-y: auto; position: relative; }
 .item-compra.arrastrando {
     opacity: 0.85 !important;
     background-color: #f4f4f9 !important;
-    transform: scale(1.02); /* Lo hace un poquito más grande */
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important; /* Sombra de que está levantado */
+    transform: scale(1.02); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important; 
     border-left: 4px solid #3f51b5 !important;
     cursor: grabbing !important;
     z-index: 999;
@@ -97,7 +103,7 @@ main { flex: 1; padding: 12px; overflow-y: auto; position: relative; }
 .sortable-drag {
     opacity: 1 !important;
     box-shadow: 0 15px 30px rgba(0,0,0,0.3) !important;
-    transform: scale(1.03); /* El clon que sigue el dedo se ve grande */
+    transform: scale(1.03); 
 }
 
 /* SWIPE */

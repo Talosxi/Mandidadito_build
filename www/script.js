@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.5.5
-//   Fix: Bloqueo de scroll al arrastrar
+//   MANDADITO - Lógica principal v2.5.6
+//   Fix: Sincronización visual del Drag & Drop
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -206,12 +206,13 @@ function renderizarListaCompra() {
     calcularTotal(); actualizarCheckboxSeleccionarTodo(); actualizarPresupuestoUI();
 }
 
-// --- DRAG AND DROP NATIVO CON CANDADO DE SCROLL ---
+// --- DRAG AND DROP NATIVO CON DESPLAZAMIENTO FLUIDO ---
 function activarDragNativo(wrapper, li, id) {
     const handle = li.querySelector('.drag-handle');
     let isDragging = false;
     let startY = 0;
     let placeholder = document.createElement('div');
+    placeholder.className = 'drag-placeholder'; // Para identificarlo fácil
 
     handle.addEventListener('touchstart', (e) => {
         e.stopPropagation(); 
@@ -220,7 +221,6 @@ function activarDragNativo(wrapper, li, id) {
         
         const rect = wrapper.getBoundingClientRect();
 
-        // EL CANDADO: Bloqueamos el scroll de la pantalla
         document.body.classList.add('arrastrando-activo');
 
         wrapper.style.zIndex = '1000';
@@ -231,6 +231,8 @@ function activarDragNativo(wrapper, li, id) {
 
         placeholder.style.height = `${wrapper.offsetHeight}px`;
         placeholder.style.marginTop = '4px';
+        
+        // Insertamos el placeholder justo ANTES del wrapper
         wrapper.parentNode.insertBefore(placeholder, wrapper);
 
         wrapper.style.position = 'fixed';
@@ -248,7 +250,7 @@ function activarDragNativo(wrapper, li, id) {
         
         wrapper.style.transform = `translateY(${deltaY}px) scale(1.02)`;
 
-        const wrappers = [...listaCompras.querySelectorAll('.item-swipe-wrapper:not(.drag-spacer)')];
+        const wrappers = [...listaCompras.querySelectorAll('.item-swipe-wrapper:not(.drag-placeholder)')];
         const currentIndex = wrappers.indexOf(wrapper);
         
         for (let i = 0; i < wrappers.length; i++) {
@@ -258,10 +260,15 @@ function activarDragNativo(wrapper, li, id) {
             const otherMiddle = otherRect.top + otherRect.height / 2;
             
             if (clientY > otherMiddle && i > currentIndex) {
-                listaCompras.insertBefore(wrapper, other.nextSibling);
+                // Mover placeholder hacia abajo
+                listaCompras.insertBefore(placeholder, other.nextSibling);
+                // Y movemos el wrapper también para que se mantenga el orden del DOM
+                listaCompras.insertBefore(wrapper, placeholder.nextSibling);
                 break;
             } else if (clientY < otherMiddle && i < currentIndex) {
-                listaCompras.insertBefore(wrapper, other);
+                // Mover placeholder hacia arriba
+                listaCompras.insertBefore(placeholder, other);
+                listaCompras.insertBefore(wrapper, placeholder.nextSibling);
                 break;
             }
         }
@@ -271,7 +278,6 @@ function activarDragNativo(wrapper, li, id) {
         if (!isDragging) return;
         isDragging = false;
         
-        // QUITAMOS EL CANDADO
         document.body.classList.remove('arrastrando-activo');
 
         wrapper.style.zIndex = '';
@@ -299,7 +305,6 @@ function activarDragNativo(wrapper, li, id) {
         lista.compraActual = nuevoOrden; 
         guardarTodo();
         
-        // Re-renderizamos para que todo quede perfecto
         renderizarListaCompra();
     });
 }

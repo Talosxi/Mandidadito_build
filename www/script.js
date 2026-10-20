@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.5.4
-//   Fix: Drag nativo preciso usando placeholders
+//   MANDADITO - Lógica principal v2.5.5
+//   Fix: Bloqueo de scroll al arrastrar
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -206,15 +206,12 @@ function renderizarListaCompra() {
     calcularTotal(); actualizarCheckboxSeleccionarTodo(); actualizarPresupuestoUI();
 }
 
-// --- DRAG AND DROP NATIVO DEFINITIVO (Sin desfases) ---
+// --- DRAG AND DROP NATIVO CON CANDADO DE SCROLL ---
 function activarDragNativo(wrapper, li, id) {
     const handle = li.querySelector('.drag-handle');
     let isDragging = false;
     let startY = 0;
-    let initialTop = 0;
-    
-    // Creamos un clon visual que será el que se mueva
-    let clone = null;
+    let placeholder = document.createElement('div');
 
     handle.addEventListener('touchstart', (e) => {
         e.stopPropagation(); 
@@ -222,65 +219,49 @@ function activarDragNativo(wrapper, li, id) {
         startY = e.touches[0].clientY;
         
         const rect = wrapper.getBoundingClientRect();
-        initialTop = rect.top;
 
-        // Creamos el clon
-        clone = wrapper.cloneNode(true);
-        clone.style.position = 'fixed';
-        clone.style.width = `${rect.width}px`;
-        clone.style.top = `${rect.top}px`;
-        clone.style.left = `${rect.left}px`;
-        clone.style.zIndex = '9999';
-        clone.style.opacity = '0.9';
-        clone.style.pointerEvents = 'none'; // El clon no recibe toques
-        clone.style.transition = 'none';
-        clone.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
-        document.body.appendChild(clone);
+        // EL CANDADO: Bloqueamos el scroll de la pantalla
+        document.body.classList.add('arrastrando-activo');
 
-        // Ocultamos el original, pero dejamos su espacio
-        wrapper.style.opacity = '0';
-        
-        // Creamos un "espacio" que se irá moviendo en la lista
-        const spacer = document.createElement('div');
-        spacer.className = 'item-swipe-wrapper drag-spacer';
-        spacer.style.height = `${wrapper.offsetHeight}px`;
-        spacer.style.marginTop = '4px';
-        spacer.dataset.id = wrapper.dataset.id;
-        wrapper.parentNode.insertBefore(spacer, wrapper.nextSibling);
+        wrapper.style.zIndex = '1000';
+        wrapper.style.position = 'relative';
+        wrapper.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
+        wrapper.style.transition = 'none';
+        wrapper.style.background = '#f4f4f9';
 
+        placeholder.style.height = `${wrapper.offsetHeight}px`;
+        placeholder.style.marginTop = '4px';
+        wrapper.parentNode.insertBefore(placeholder, wrapper);
+
+        wrapper.style.position = 'fixed';
+        wrapper.style.width = `${rect.width}px`;
+        wrapper.style.top = `${rect.top}px`;
+        wrapper.style.left = `${rect.left}px`;
     }, { passive: false });
 
     handle.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         e.preventDefault(); 
         
-        const deltaY = e.touches[0].clientY - startY; 
+        const clientY = e.touches[0].clientY;
+        const deltaY = clientY - startY; 
         
-        // Movemos el clon
-        clone.style.transform = `translateY(${deltaY}px)`;
+        wrapper.style.transform = `translateY(${deltaY}px) scale(1.02)`;
 
-        // Buscamos el espaciador
-        const spacer = listaCompras.querySelector('.drag-spacer');
-        if (!spacer) return;
-        
-        const currentY = e.touches[0].clientY;
         const wrappers = [...listaCompras.querySelectorAll('.item-swipe-wrapper:not(.drag-spacer)')];
+        const currentIndex = wrappers.indexOf(wrapper);
         
         for (let i = 0; i < wrappers.length; i++) {
+            if (i === currentIndex) continue;
             const other = wrappers[i];
             const otherRect = other.getBoundingClientRect();
             const otherMiddle = otherRect.top + otherRect.height / 2;
             
-            const spacerIndex = [...listaCompras.children].indexOf(spacer);
-            const otherIndex = [...listaCompras.children].indexOf(other);
-            
-            if (currentY > otherMiddle && spacerIndex < otherIndex) {
-                // Mover espaciador hacia abajo
-                listaCompras.insertBefore(spacer, other.nextSibling);
+            if (clientY > otherMiddle && i > currentIndex) {
+                listaCompras.insertBefore(wrapper, other.nextSibling);
                 break;
-            } else if (currentY < otherMiddle && spacerIndex > otherIndex) {
-                // Mover espaciador hacia arriba
-                listaCompras.insertBefore(spacer, other);
+            } else if (clientY < otherMiddle && i < currentIndex) {
+                listaCompras.insertBefore(wrapper, other);
                 break;
             }
         }
@@ -290,22 +271,24 @@ function activarDragNativo(wrapper, li, id) {
         if (!isDragging) return;
         isDragging = false;
         
-        // Eliminamos el clon
-        if (clone && clone.parentNode) {
-            clone.parentNode.removeChild(clone);
+        // QUITAMOS EL CANDADO
+        document.body.classList.remove('arrastrando-activo');
+
+        wrapper.style.zIndex = '';
+        wrapper.style.position = '';
+        wrapper.style.boxShadow = '';
+        wrapper.style.transform = '';
+        wrapper.style.transition = 'transform 0.2s ease';
+        wrapper.style.background = '';
+        wrapper.style.width = '';
+        wrapper.style.top = '';
+        wrapper.style.left = '';
+
+        if (placeholder.parentNode) {
+            placeholder.parentNode.removeChild(placeholder);
         }
 
-        // Restauramos el original
-        wrapper.style.opacity = '1';
-
-        // Quitamos el espaciador
-        const spacer = listaCompras.querySelector('.drag-spacer');
-        if (spacer && spacer.parentNode) {
-            spacer.parentNode.removeChild(spacer);
-        }
-
-        // Guardamos el orden basado en el DOM actual (el original y los demás están en el nuevo orden)
-        const items = [...listaCompras.querySelectorAll('.item-swipe-wrapper')]; 
+        const items = listaCompras.querySelectorAll('.item-swipe-wrapper'); 
         const nuevoOrden = []; 
         const lista = getListaActual();
         items.forEach(item => { 

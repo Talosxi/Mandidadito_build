@@ -14,15 +14,13 @@
             <span class="panda">🐼</span>
             <div class="titulo-container">
                 <h1>Mandadito</h1>
-                <span class="version">v2.4.2</span>
+                <span class="version">v2.5.7</span>
             </div>
         </div>
         <div class="lista-selector" id="header-lista-selector">
-            <select id="selector-lista">
-                <!-- Se llena dinámicamente -->
-            </select>
+            <select id="selector-lista"></select>
             <button id="btn-nueva-lista" title="Crear nueva lista">+</button>
-            <button id="btn-editar-lista" title="Editar lista (nombre y presupuesto)">✏️</button>
+            <button id="btn-editar-lista" title="Editar lista">✏️</button>
             <button id="btn-borrar-lista" title="Borrar esta lista">🗑️</button>
         </div>
     </header>
@@ -35,7 +33,6 @@
                     <input type="checkbox" id="checkbox-seleccionar-todo">
                     <label for="checkbox-seleccionar-todo" id="texto-seleccionar-todo">Seleccionar todo</label>
                 </div>
-                
                 <ul id="lista-compras"></ul>
                 <p id="mensaje-vacio">No hay productos en tu lista de compra. Ve a 📦 Productos y agrega los que necesites.</p>
             </div>
@@ -56,14 +53,13 @@
             </div>
         </section>
 
-        <!-- Pantalla de Productos (Catálogo Maestro) -->
+        <!-- Pantalla de Productos -->
         <section id="productos-screen" class="screen">
             <div id="lista-productos-container">
                 <div id="seleccionar-todos-productos-container" class="seleccionar-todo">
                     <input type="checkbox" id="checkbox-seleccionar-todos-productos">
                     <label for="checkbox-seleccionar-todos-productos" id="texto-seleccionar-todos-productos">Seleccionar todos</label>
                 </div>
-                
                 <ul id="lista-productos"></ul>
                 <p id="mensaje-productos-vacio">Aún no tienes productos en tu catálogo. Agrega uno en 🐼 Captura.</p>
             </div>
@@ -81,9 +77,7 @@
             </div>
             <div class="input-group">
                 <label>Departamento</label>
-                <select id="departamento">
-                    <!-- Se llena dinámicamente -->
-                </select>
+                <select id="departamento"></select>
             </div>
             <div class="input-group">
                 <label>Precio Unitario</label>
@@ -113,13 +107,11 @@
         </button>
     </nav>
 
-    <!-- Modal para Agregar a Compra -->
+    <!-- Modales -->
     <div id="modal-agregar-compra" class="modal-overlay">
         <div class="modal-contenido">
             <h3>Agregar a:</h3>
-            <div id="modal-listas-existentes" class="modal-listas">
-                <!-- Se llena dinámicamente -->
-            </div>
+            <div id="modal-listas-existentes" class="modal-listas"></div>
             <div class="modal-separador">─── O ───</div>
             <button id="btn-crear-nueva-lista-modal" class="btn-crear-modal">➕ Crear nueva lista</button>
             <div class="modal-botones">
@@ -129,7 +121,6 @@
         </div>
     </div>
 
-    <!-- Modal para Editar Producto -->
     <div id="modal-editar-producto" class="modal-overlay">
         <div class="modal-contenido">
             <h3>✏️ Editar Producto</h3>
@@ -156,7 +147,6 @@
         </div>
     </div>
 
-    <!-- Modal para Editar Lista (nombre + presupuesto) -->
     <div id="modal-editar-lista" class="modal-overlay">
         <div class="modal-contenido">
             <h3>✏️ Editar Lista</h3>
@@ -175,7 +165,6 @@
         </div>
     </div>
 
-    <!-- Toast con opción de deshacer -->
     <div id="toast" class="toast">
         <span id="toast-texto"></span>
         <button id="toast-undo" class="toast-undo" style="display: none;">↩️ Deshacer</button>

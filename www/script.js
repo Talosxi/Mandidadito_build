@@ -1,6 +1,6 @@
 // ============================================
-//   MANDADITO - Lógica principal v2.5.6
-//   Fix: Sincronización visual del Drag & Drop
+//   MANDADITO - Lógica principal v2.5.7
+//   Nueva categoría: Desechables
 // ============================================
 
 const DEPARTAMENTOS = [
@@ -9,7 +9,8 @@ const DEPARTAMENTOS = [
     { nombre: "Higiene", emoji: "💅🏻" }, { nombre: "Hogar", emoji: "🧺" },
     { nombre: "Lácteos y embutidos", emoji: "🐮" }, { nombre: "Limpieza", emoji: "🧼" },
     { nombre: "Otros", emoji: "🧰" }, { nombre: "Panadería y tortillas", emoji: "🍞" },
-    { nombre: "Prichos", emoji: "🛍️" }, { nombre: "Snacks", emoji: "🍫" }
+    { nombre: "Prichos", emoji: "🛍️" }, { nombre: "Snacks", emoji: "🍫" },
+    { nombre: "Desechables", emoji: "🥡" }
 ];
 
 function getEmoji(nombre) {
@@ -212,7 +213,7 @@ function activarDragNativo(wrapper, li, id) {
     let isDragging = false;
     let startY = 0;
     let placeholder = document.createElement('div');
-    placeholder.className = 'drag-placeholder'; // Para identificarlo fácil
+    placeholder.className = 'drag-placeholder'; 
 
     handle.addEventListener('touchstart', (e) => {
         e.stopPropagation(); 
@@ -232,7 +233,6 @@ function activarDragNativo(wrapper, li, id) {
         placeholder.style.height = `${wrapper.offsetHeight}px`;
         placeholder.style.marginTop = '4px';
         
-        // Insertamos el placeholder justo ANTES del wrapper
         wrapper.parentNode.insertBefore(placeholder, wrapper);
 
         wrapper.style.position = 'fixed';
@@ -260,13 +260,10 @@ function activarDragNativo(wrapper, li, id) {
             const otherMiddle = otherRect.top + otherRect.height / 2;
             
             if (clientY > otherMiddle && i > currentIndex) {
-                // Mover placeholder hacia abajo
                 listaCompras.insertBefore(placeholder, other.nextSibling);
-                // Y movemos el wrapper también para que se mantenga el orden del DOM
                 listaCompras.insertBefore(wrapper, placeholder.nextSibling);
                 break;
             } else if (clientY < otherMiddle && i < currentIndex) {
-                // Mover placeholder hacia arriba
                 listaCompras.insertBefore(placeholder, other);
                 listaCompras.insertBefore(wrapper, placeholder.nextSibling);
                 break;
